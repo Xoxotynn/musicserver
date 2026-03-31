@@ -35,10 +35,14 @@ fi
 cd "$REPO_NAME"
 chmod +x setup.sh
 
+sudo usermod -aG docker $USER
+
 echo "================================================="
 echo "Все установили"
 echo "Чтобы развернуть сервер:"
-echo "2. Скопируй конфиг: cp .env.example .env"
-echo "3. Заполни секреты: nano .env"
-echo "4. Запусти сервер: ./setup.sh"
+echo "1. Перейди в проект cd $REPO_NAME"
+echo "2. Примени права группы: newgrp docker"
+echo "3. Скопируй конфиг: cp .env.example .env"
+echo "4. Заполни секреты: nano .env"
+echo "5. Запусти сервер: ./setup.sh"
 echo "================================================="

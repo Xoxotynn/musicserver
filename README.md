@@ -67,6 +67,8 @@ wget -qO- https://gist.githubusercontent.com/Xoxotynn/fbaa8805300f8384449b45c3dd
 
 **После установки:**
 ```bash
+cd musicserver
+newgrp docker # Применение прав группы, что Docker работал без sudo
 cp .env.example .env
 nano .env   # Заполни свои данные
 ./setup.sh
