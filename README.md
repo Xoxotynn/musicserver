@@ -50,6 +50,11 @@ netsh interface portproxy add v4tov4 listenport=4533 listenaddress=0.0.0.0 conne
 * **Profiles:** All (Domain, Private, Public)
 * **Name:** navidrome
 
+### 4. Настройка V2RayN
+Если для впна юзается V2RayN то:
+**Settings** -> **Option Settings** -> **Core: basic settings**
+И поставить галочку в **Allow connections from the LAN**
+
 ---
 
 ## Установка и развертывание
@@ -67,8 +72,9 @@ wget -qO- https://gist.githubusercontent.com/Xoxotynn/fbaa8805300f8384449b45c3dd
 
 **После установки:**
 ```bash
-cd musicserver
+id -u # Убедится что выводится 1000, если нет - фикси
 newgrp docker # Применение прав группы, что Docker работал без sudo
+cd musicserver
 cp .env.example .env
 nano .env   # Заполни свои данные
 ./setup.sh
