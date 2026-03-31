@@ -23,7 +23,11 @@ REPO_URL="git@github.com:Xoxotynn/musicserver.git"
 REPO_NAME=$(basename "$REPO_URL" .git)
 
 if [ ! -d "$REPO_NAME" ]; then
-    git clone "$REPO_URL"
+    if ! git clone "$REPO_URL"; then
+        echo "❌ Ошибка при клонировании"
+        rm -rf "$REPO_NAME" 
+        exit 1
+    fi
 else
     echo "Папка $REPO_NAME уже существует"
 fi
