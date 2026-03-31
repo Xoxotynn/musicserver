@@ -55,13 +55,13 @@ netsh interface portproxy add v4tov4 listenport=4533 listenaddress=0.0.0.0 conne
 ## Установка и развертывание
 
 ```bash
-bash <(curl -s https://gist.githubusercontent.com/Xoxotynn/fbaa8805300f8384449b45c3dd8a5b34/raw/6c0bf162cec31d2a25357464a608037b51c45192/bootstrap.sh)
+bash <(curl -s https://gist.githubusercontent.com/Xoxotynn/fbaa8805300f8384449b45c3dd8a5b34/raw/d88576da7aba758810f8a8d0b8244ec39d5fba84/bootstrap.sh)
 ```
 
 или
 
 ```bash
-wget -qO- https://gist.githubusercontent.com/Xoxotynn/fbaa8805300f8384449b45c3dd8a5b34/raw/6c0bf162cec31d2a25357464a608037b51c45192/bootstrap.sh | bash
+wget -qO- https://gist.githubusercontent.com/Xoxotynn/fbaa8805300f8384449b45c3dd8a5b34/raw/d88576da7aba758810f8a8d0b8244ec39d5fba84/bootstrap.sh | bash
 ```
 
 
