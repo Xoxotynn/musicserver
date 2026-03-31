@@ -23,9 +23,7 @@ services:
     user: 1000:1000
     env_file: .env
     restart: unless-stopped
-    dns:
-      - 8.8.8.8
-      - 1.1.1.1
+    network_mode: host
     environment:
       TZ: Europe/Tomsk
     volumes:
