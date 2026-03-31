@@ -8,7 +8,7 @@ export ARCHIVE_FILE="$MUSIC_DIR/archive.txt"
 export TEMP_LIKES_DATA_FILE="$SCRIPT_DIR/likes_data.json"
 
 # Navidrome API
-export NAV_URL="http://navidrome:${ND_PORT}/rest"
+export NAV_URL="http://navidrome:4533/rest"
 export NAV_USER="${ND_USER}"
 export NAV_PASS="${ND_PASS}"
 export NAV_SALT="${ND_SALT}"

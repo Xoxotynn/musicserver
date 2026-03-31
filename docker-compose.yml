@@ -7,20 +7,24 @@ services:
       - "${ND_PORT}:4533"
     restart: unless-stopped
     environment:
-      ND_ADRESS: 0.0.0.0
+      ND_ADDRESS: 0.0.0.0
       ND_SCAN_SCHEDULE: "@every 24h"
       ND_LOGLEVEL: info
       ND_ENABLETRANSCODINGCONFIG: "true"
       ND_TRANSCODINGCACHESIZE: "1GB"
       ND_IMAGECACHESIZE: "100MB"
+      TZ: Europe/Tomsk
     volumes:
       - ./data:/data
       - ./music:/music:ro
 
   sync-worker:
     build: ./syncworker
+    user: 1000:1000
     env_file: .env
     restart: unless-stopped
+    environment:
+      TZ: Europe/Tomsk
     volumes:
       - ./music:/music
     depends_on:
