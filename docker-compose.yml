@@ -1,0 +1,27 @@
+services:
+  navidrome:
+    image: deluan/navidrome:latest
+    user: 1000:1000
+    env_file: .env
+    ports:
+      - "${ND_PORT}:4533"
+    restart: unless-stopped
+    environment:
+      ND_ADRESS: 0.0.0.0
+      ND_SCAN_SCHEDULE: "@every 24h"
+      ND_LOGLEVEL: info
+      ND_ENABLETRANSCODINGCONFIG: "true"
+      ND_TRANSCODINGCACHESIZE: "1GB"
+      ND_IMAGECACHESIZE: "100MB"
+    volumes:
+      - ./data:/data
+      - ./music:/music:ro
+
+  sync-worker:
+    build: ./syncworker
+    env_file: .env
+    restart: unless-stopped
+    volumes:
+      - ./music:/music
+    depends_on:
+      - navidrome

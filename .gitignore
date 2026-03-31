@@ -1,0 +1,4 @@
+.env
+music/
+data/
+worker/scripts/likes_data.json
