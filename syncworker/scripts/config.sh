@@ -5,7 +5,7 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
 export MUSIC_DIR="/music"
 export PLAYLISTS_DIR="$MUSIC_DIR/playlists"
 export ARCHIVE_FILE="$MUSIC_DIR/archive.txt"
-export TEMP_LIKES_DATA_FILE="$SCRIPT_DIR/likes_data.json"
+export TEMP_LIKES_DATA_FILE="/tmp/likes_data.json"
 
 # Navidrome API
 export NAV_URL="http://127.0.0.1:${ND_PORT}/rest"

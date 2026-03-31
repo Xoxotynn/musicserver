@@ -25,7 +25,10 @@ services:
     restart: unless-stopped
     network_mode: host
     environment:
-      TZ: Europe/Tomsk
+      - XDG_CACHE_HOME=/tmp/.cache
+      - HTTP_PROXY=http://127.0.0.1:10808
+      - HTTPS_PROXY=http://127.0.0.1:10808
+      - TZ=Europe/Tomsk
     volumes:
       - ./music:/music
     depends_on:
