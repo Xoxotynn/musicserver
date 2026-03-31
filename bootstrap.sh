@@ -5,7 +5,7 @@ echo "=== Подготовка для развертывания Navidrome ==="
 
 echo "[1/4] Установка Git"
 sudo apt-get update
-sudo apt-get install -y git
+sudo apt-get install -y git curl
 
 if ! command -v docker &> /dev/null; then
     echo "[2/4] Установка Docker"
