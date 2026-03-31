@@ -8,9 +8,7 @@ Docker-контейнеры:
 
 ## Требования к хосту
 
-* Docker и Docker Compose
-* Git
-* [cite_start]если сервер разворачивается на Windows, то нужно установить и подготовить WSL2 (Debian)[cite: 1].
+* если сервер разворачивается на Windows, то нужно установить и подготовить WSL2 (Debian)
 
 ---
 
@@ -19,7 +17,7 @@ Docker-контейнеры:
 > Этот шаг нужен **только** если хост на Windows. При развертывании на Linux сервере можно скипнуть.
 
 ### 1. Конфигурация ресурсов и сети
-[cite_start]Чтобы норм работало и не жрало ресурсы нужно задать лимиты[cite: 1].
+Чтобы не жрало ресурсы нужно задать лимиты
 Создай файл `.wslconfig` в (`C:\Users\USERNAME\.wslconfig`):
 
 ```ini
@@ -31,25 +29,26 @@ autoMemoryReclaim=dropcache
 networkingMode=mirrored
 localhostForwarding=true
 ```
-[cite_start]Режим `networkingMode=mirrored` важен, если на пк поднят VPN, и необходимо пробрасывать эти настройки внутрь WSL для корректного исходящего подключения[cite: 2].
+Режим `networkingMode=mirrored` важен, если на пк поднят VPN, и необходимо пробрасывать эти настройки внутрь WSL для корректного исходящего подключения
 
 ### 2. Проброс портов
-[cite_start]Для доступа к серверу из локальной сети пробрось порт из Windows в WSL2[cite: 12]. Запусти PowerShell от админа и выполни:
+Для доступа к серверу из локальной сети пробрось порт из Windows в WSL2
 
+Запусти PowerShell от админа и выполни:
 ```powershell
 netsh interface portproxy add v4tov4 listenport=4533 listenaddress=0.0.0.0 connectport=4533 connectaddress=127.0.0.1
 ```
 
 ### 3. Настройка Брандмауэра Windows
-[cite_start]Разрешаем входящие подключения для порта 4533[cite: 12]. 
-[cite_start]Зайди в **Windows Defender Firewall with Advanced Security** -> **Inbound Rules** -> **Add rule**[cite: 13]. 
+Разрешаем входящие подключения для порта 4533 
+Зайди в **Windows Defender Firewall with Advanced Security** -> **Inbound Rules** -> **Add rule** 
 Параметры:
-* [cite_start]**Rule type:** Port [cite: 13]
-* [cite_start]**Protocol:** TCP [cite: 13]
-* [cite_start]**Specific rule ports:** 4533 [cite: 13]
-* [cite_start]**Action:** Allow the connection [cite: 13]
-* [cite_start]**Profiles:** All (Domain, Private, Public) [cite: 13]
-* [cite_start]**Name:** navidrome [cite: 13]
+* **Rule type:** Port
+* **Protocol:** TCP
+* **Specific rule ports:** 4533
+* **Action:** Allow the connection
+* **Profiles:** All (Domain, Private, Public)
+* **Name:** navidrome
 
 ---
 
@@ -77,7 +76,7 @@ nano .env   # Заполни свои данные
 
 ## Настройка доступа из интернета
 
-[cite_start]Для доступа также нужно пробросить порт 4533 на роутере[cite: 12].
+Для доступа также нужно пробросить порт 4533 на роутере
 
 Если роутер на OpenWRT, проброс можно настроить через LuCI (раздел *Network -> Firewall -> Port Forwards*) или по SSH:
 
