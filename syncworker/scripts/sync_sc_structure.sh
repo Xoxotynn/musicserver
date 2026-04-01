@@ -5,6 +5,11 @@ echo "--- Шаг 3: Синхронизация лайков и создание 
 
 yt-dlp --flat-playlist --dump-single-json "$SOUNDCLOUD_URL" > "$TEMP_LIKES_DATA_FILE"
 
+VALID_IDS_FILE="/tmp/valid_sc_ids.txt"
+> "$VALID_IDS_FILE"
+
+echo "Добавление новых лайков"
+
 rm -f "$PLAYLISTS_DIR"/*.m3u
 
 jq -c '.entries | reverse | .[]' "$TEMP_LIKES_DATA_FILE" | while read -r entry; do
@@ -19,11 +24,15 @@ jq -c '.entries | reverse | .[]' "$TEMP_LIKES_DATA_FILE" | while read -r entry; 
         echo "#EXTM3U" > "$M3U_FILE"
 
         yt-dlp --flat-playlist --get-id "$item_url" | while read -r track_id; do
+            echo "$track_id" >> "$VALID_IDS_FILE"
+
             filename=$(find "$MUSIC_DIR" -maxdepth 1 -type f | grep -F "[$track_id]" | sed 's|.*/||' | head -n 1)
             [ -n "$filename" ] && echo "../$filename" >> "$M3U_FILE"
         done
     else
         echo "[Like] Обработка трека: $raw_title"
+
+        echo "$id" >> "$VALID_IDS_FILE"
 
         SEARCH_QUERY=$(echo -n "$raw_title" | jq -sRr @uri)
         SEARCH_RESULT=$(curl -s "${ENDPOINT_SEARCH}&query=${SEARCH_QUERY}")
@@ -38,4 +47,17 @@ jq -c '.entries | reverse | .[]' "$TEMP_LIKES_DATA_FILE" | while read -r entry; 
     fi
 done
 
-rm "$TEMP_LIKES_DATA_FILE"
+echo "Очистка удаленных лайков"
+
+find "$MUSIC_DIR" -maxdepth 1 -type f -name "*\[*\].*" | while read -r file; do
+    track_id=$(echo "$file" | grep -o '\[.*\]' | tr -d '[]')
+    
+    if ! grep -qw "$track_id" "$VALID_IDS_FILE"; then
+        echo "Удаляем: $file"
+        rm -f "$file"
+        sed -i "/^soundcloud $track_id$/d" "$ARCHIVE_FILE"
+    fi
+done
+
+rm -f "$TEMP_LIKES_DATA_FILE"
+rm -f "$VALID_IDS_FILE"
