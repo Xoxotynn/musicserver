@@ -16,7 +16,8 @@ jq -c '.entries | reverse | .[]' "$TEMP_LIKES_DATA_FILE" | while read -r entry; 
     item_url=$(echo "$entry" | jq -r '.url')
     id=$(echo "$entry" | jq -r '.id')
     raw_title=$(echo "$entry" | jq -r '.title')
-    clean_title=$(echo "$raw_title" | tr -d '/\?%*:|"<>')
+    clean_title=$(echo "$raw_title" | tr -d '/\?%*:|"<>' | sed 's/^[.-]*//')
+    [ -z "$clean_title" ] && clean_title="unnamed_playlist_${id}"
 
     if [[ "$item_url" == *"/sets/"* ]]; then
         echo "[Playlist] Создаем: $raw_title"
@@ -50,7 +51,7 @@ done
 echo "Очистка удаленных лайков"
 
 find "$MUSIC_DIR" -maxdepth 1 -type f -name "*\[*\].*" | while read -r file; do
-    track_id=$(echo "$file" | grep -o '\[.*\]' | tr -d '[]')
+    track_id=$(echo "$file" | grep -o '\[[0-9]\+\]' | tr -d '[]')
     
     if ! grep -qw "$track_id" "$VALID_IDS_FILE"; then
         echo "Удаляем: $file"
