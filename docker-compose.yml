@@ -13,7 +13,7 @@ services:
       ND_ENABLETRANSCODINGCONFIG: "true"
       ND_TRANSCODINGCACHESIZE: "1GB"
       ND_IMAGECACHESIZE: "100MB"
-      TZ: Europe/Tomsk
+      TZ: Asia/Tomsk
     volumes:
       - ./data:/data
       - ./music:/music:ro
@@ -28,7 +28,7 @@ services:
       - XDG_CACHE_HOME=/tmp/.cache
       - HTTP_PROXY=http://127.0.0.1:10808
       - HTTPS_PROXY=http://127.0.0.1:10808
-      - TZ=Europe/Tomsk
+      - TZ=Asia/Tomsk
     volumes:
       - ./music:/music
     depends_on:
