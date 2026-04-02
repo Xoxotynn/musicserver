@@ -18,11 +18,7 @@ echo "=== ЗАПУСК ПОЛНОЙ СИНХРОНИЗАЦИИ ==="
 
 if [ "$RUN_FIX" = true ]; then
     echo "🛠️ Запуск фикса имен файлов"
-    if [ -f "./fix_filenames.sh" ]; then
-        $BASE_DIR/fix_filenames.sh
-    else
-        echo "❌ Скрипт фикса имен файлов fix_filenames.sh не найден"
-    fi
+    $BASE_DIR/fix_filenames.sh
 else
     echo "ℹ️ Пропускаем фикс имен"
 fi
