@@ -18,5 +18,5 @@ echo "Сборка и запуск контейнеров"
 docker compose up -d --build
 
 echo "Развернулись, врубай темного принца"
-echo "Для ручного запуска синхронизации:"
-echo "docker compose exec sync-worker /app/scripts/full_sync.sh"
+echo "Для ручного управления:"
+echo "./run.sh"
