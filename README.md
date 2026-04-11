@@ -36,16 +36,16 @@ localhostForwarding=true
 
 Запусти PowerShell от админа и выполни:
 ```powershell
-netsh interface portproxy add v4tov4 listenport=4533 listenaddress=0.0.0.0 connectport=4533 connectaddress=127.0.0.1
+netsh interface portproxy add v4tov4 listenport={ND_PORT} listenaddress=0.0.0.0 connectport={ND_PORT} connectaddress=127.0.0.1
 ```
 
 ### 3. Настройка Брандмауэра Windows
-Разрешаем входящие подключения для порта 4533 
+Разрешаем входящие подключения для порта {ND_PORT} 
 Зайди в **Windows Defender Firewall with Advanced Security** -> **Inbound Rules** -> **Add rule** 
 Параметры:
 * **Rule type:** Port
 * **Protocol:** TCP
-* **Specific rule ports:** 4533
+* **Specific rule ports:** {ND_PORT}
 * **Action:** Allow the connection
 * **Profiles:** All (Domain, Private, Public)
 * **Name:** navidrome
@@ -84,7 +84,7 @@ nano .env   # Заполни свои данные
 
 ## Настройка доступа из интернета
 
-Для доступа также нужно пробросить порт 4533 на роутере
+Для доступа также нужно пробросить порт {ND_PORT} на роутере
 
 Если роутер на OpenWRT, проброс можно настроить через LuCI (раздел *Network -> Firewall -> Port Forwards*) или по SSH:
 
@@ -92,10 +92,10 @@ nano .env   # Заполни свои данные
 uci add firewall redirect
 uci set firewall.@redirect[-1].name='Navidrome_WAN'
 uci set firewall.@redirect[-1].src='wan'
-uci set firewall.@redirect[-1].src_dport='4533'
+uci set firewall.@redirect[-1].src_dport='{ND_PORT}'
 uci set firewall.@redirect[-1].dest='lan'
 uci set firewall.@redirect[-1].dest_ip='SERVER_LOCAL_IP'
-uci set firewall.@redirect[-1].dest_port='4533'
+uci set firewall.@redirect[-1].dest_port='{ND_PORT}'
 uci set firewall.@redirect[-1].target='DNAT'
 uci commit firewall
 /etc/init.d/firewall restart
@@ -105,7 +105,7 @@ uci commit firewall
 
 ## Использование и управление
 
-Интерфейс Navidrome будет доступен по адресу: `http://<ВНЕШНИЙ_IP>:4533`
+Интерфейс Navidrome будет доступен по адресу: `http://localhost:{ND_PORT}`
 
 Синхронизация происходит каждые 7 дней.
 **Для ручного управления проектом**:
