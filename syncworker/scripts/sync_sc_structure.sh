@@ -35,9 +35,29 @@ jq -c '.entries | reverse | .[]' "$TEMP_LIKES_DATA_FILE" | while read -r entry; 
 
         echo "$id" >> "$VALID_IDS_FILE"
 
-        SEARCH_QUERY=$(echo -n "$raw_title" | jq -sRr @uri)
+        NORMALIZED_TITLE=$(echo "$raw_title" | tr '[:upper:]' '[:lower:]' | xargs)
+
+        raw_artist=$(echo "$entry" | jq -r '.artist // .creator // .uploader // .channel // empty')
+        clean_artist=$(echo "$raw_artist" | tr '[:upper:]' '[:lower:]' | xargs)
+
+        if [ -z "$clean_artist" ]; then
+            echo " ⚠️ -> артист не найден в данных, пропускаю чтобы не лайкнуть не тот трек"
+            continue
+        fi
+
+        SEARCH_QUERY=$(printf '%s %s' "$raw_artist" "$raw_title" | jq -sRr @uri)
         SEARCH_RESULT=$(curl -s "${ENDPOINT_SEARCH}&query=${SEARCH_QUERY}")
-        TRACK_ID=$(echo "$SEARCH_RESULT" | jq -r '."subsonic-response".searchResult3.song[0].id // empty')
+        
+        TRACK_ID=$(echo "$SEARCH_RESULT" | jq -r \
+            --arg title "$NORMALIZED_TITLE" \
+            --arg artist "$clean_artist" '
+            ."subsonic-response".searchResult3.song[]? |
+            select(
+                ((.title // "" | ascii_downcase | gsub("\\s+"; " ") | xargs) == $title) and
+                ((.artist // "" | ascii_downcase | gsub("\\s+"; " ") | xargs) == $artist)
+            ) |
+            .id
+            ' | head -n 1)
 
         if [ -n "$TRACK_ID" ] && [ "$TRACK_ID" != "null" ]; then
             curl -s "${ENDPOINT_STAR}&id=${TRACK_ID}" > /dev/null
