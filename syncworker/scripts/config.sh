@@ -21,5 +21,7 @@ export ENDPOINT_SCAN="${NAV_URL}/startScan.view?${API_PARAMS}"
 export ENDPOINT_STATUS="${NAV_URL}/getScanStatus.view?${API_PARAMS}"
 export ENDPOINT_SEARCH="${NAV_URL}/search3.view?${API_PARAMS}"
 export ENDPOINT_STAR="${NAV_URL}/star.view?${API_PARAMS}"
+export ENDPOINT_UNSTAR="${NAV_URL}/unstar.view?${API_PARAMS}"
+export ENDPOINT_GET_STARRED="${NAV_URL}/getStarred.view?${API_PARAMS}"
 
 mkdir -p "$PLAYLISTS_DIR"

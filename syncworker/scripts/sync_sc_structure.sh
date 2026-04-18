@@ -8,6 +8,32 @@ yt-dlp --flat-playlist --dump-single-json "$SOUNDCLOUD_URL" > "$TEMP_LIKES_DATA_
 VALID_IDS_FILE="/tmp/valid_sc_ids.txt"
 > "$VALID_IDS_FILE"
 
+echo "Очистка старых лайков в Navidrome"
+
+STARRED_RESULT=$(curl -s "$ENDPOINT_STARRED")
+
+mapfile -t STARRED_IDS < <(
+    echo "$STARRED_RESULT" | jq -r '
+        .["subsonic-response"].starred
+        | .song[]?.id,
+          .album[]?.id,
+          .artist[]?.id
+        // empty
+    '
+)
+
+if [ "${#STARRED_IDS[@]}" -gt 0 ]; then
+    UNSTAR_QUERY=""
+    for STARRED_ID in "${STARRED_IDS[@]}"; do
+        UNSTAR_QUERY="${UNSTAR_QUERY}&id=$(printf '%s' "$STARRED_ID" | jq -sRr @uri)"
+    done
+
+    curl -s "${ENDPOINT_UNSTAR}${UNSTAR_QUERY}" > /dev/null
+    echo " 🧹 -> Удалено старых лайков: ${#STARRED_IDS[@]}"
+else
+    echo " 🧹 -> Старых лайков не найдено"
+fi
+
 echo "Добавление новых лайков"
 
 rm -f "$PLAYLISTS_DIR"/*.m3u
@@ -41,7 +67,7 @@ jq -c '.entries | reverse | .[]' "$TEMP_LIKES_DATA_FILE" | while read -r entry; 
         clean_artist=$(echo "$raw_artist" | tr '[:upper:]' '[:lower:]' | xargs)
 
         if [ -z "$clean_artist" ]; then
-            echo " ⚠️ -> артист не найден в данных, пропускаю чтобы не лайкнуть не тот трек"
+            echo " ⚠️ Артист не найден в данных, пропускаю чтобы не лайкнуть не тот трек"
             continue
         fi
 
