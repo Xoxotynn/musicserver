@@ -10,7 +10,7 @@ VALID_IDS_FILE="/tmp/valid_sc_ids.txt"
 
 echo "Очистка старых лайков в Navidrome"
 
-STARRED_RESULT=$(curl -s "$ENDPOINT_STARRED")
+STARRED_RESULT=$(curl -s "$ENDPOINT_GET_STARRED")
 
 mapfile -t STARRED_IDS < <(
     echo "$STARRED_RESULT" | jq -r '
@@ -61,26 +61,19 @@ jq -c '.entries | reverse | .[]' "$TEMP_LIKES_DATA_FILE" | while read -r entry; 
 
         echo "$id" >> "$VALID_IDS_FILE"
 
-        NORMALIZED_TITLE=$(echo "$raw_title" | tr '[:upper:]' '[:lower:]' | xargs)
+        SEARCH_QUERY=$(echo "$raw_title" | jq -sRr @uri)
+        SEARCH_RESULT=$(curl -fsS "${ENDPOINT_SEARCH}&query=${SEARCH_QUERY}")
 
-        raw_artist=$(echo "$entry" | jq -r '.artist // .creator // .uploader // .channel // empty')
-        clean_artist=$(echo "$raw_artist" | tr '[:upper:]' '[:lower:]' | xargs)
-
-        if [ -z "$clean_artist" ]; then
-            echo " ⚠️ Артист не найден в данных, пропускаю чтобы не лайкнуть не тот трек"
-            continue
-        fi
-
-        SEARCH_QUERY=$(printf '%s %s' "$raw_artist" "$raw_title" | jq -sRr @uri)
-        SEARCH_RESULT=$(curl -s "${ENDPOINT_SEARCH}&query=${SEARCH_QUERY}")
+        echo "=== SC ENTRY ==="
+        echo "$entry" | jq -S
+        echo "=== NAVIDROME SEARCH RESULT TOP 5 ==="
+        echo "$SEARCH_RESULT" | jq '.["subsonic-response"].searchResult3.song[:3]'
         
         TRACK_ID=$(echo "$SEARCH_RESULT" | jq -r \
-            --arg title "$NORMALIZED_TITLE" \
-            --arg artist "$clean_artist" '
+            --arg title "$raw_title" '
             ."subsonic-response".searchResult3.song[]? |
             select(
-                ((.title // "" | ascii_downcase | gsub("\\s+"; " ") | xargs) == $title) and
-                ((.artist // "" | ascii_downcase | gsub("\\s+"; " ") | xargs) == $artist)
+                ((.title // "") == $title)
             ) |
             .id
             ' | head -n 1)
