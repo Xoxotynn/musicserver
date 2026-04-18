@@ -63,11 +63,6 @@ jq -c '.entries | reverse | .[]' "$TEMP_LIKES_DATA_FILE" | while read -r entry; 
 
         SEARCH_QUERY=$(echo "$raw_title" | jq -sRr @uri)
         SEARCH_RESULT=$(curl -fsS "${ENDPOINT_SEARCH}&query=${SEARCH_QUERY}")
-
-        echo "=== SC ENTRY ==="
-        echo "$entry" | jq -S
-        echo "=== NAVIDROME SEARCH RESULT TOP 5 ==="
-        echo "$SEARCH_RESULT" | jq '.["subsonic-response"].searchResult3.song[:3]'
         
         TRACK_ID=$(echo "$SEARCH_RESULT" | jq -r \
             --arg title "$raw_title" '
