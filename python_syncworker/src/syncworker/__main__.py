@@ -6,8 +6,8 @@ import sys
 
 from syncworker.bootstrap import bootstrap
 from syncworker.config import Config
+from syncworker.di import create_full_sync_scenario
 from syncworker.scheduler import run_worker
-from syncworker.services.service_factory import create_full_sync_service
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -36,12 +36,12 @@ def main() -> int:
 
     if args.command == "run-once":
         bootstrap(config)
-        create_full_sync_service(config).run()
+        create_full_sync_scenario(config).execute()
         return 0
 
     if args.command == "worker":
         bootstrap(config)
-        run_worker(config, lambda: create_full_sync_service(config).run())
+        run_worker(config, lambda: create_full_sync_scenario(config).execute())
         return 0
 
     raise RuntimeError(f"Unknown command: {args.command}")

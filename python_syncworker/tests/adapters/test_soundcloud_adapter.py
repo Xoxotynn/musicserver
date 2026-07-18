@@ -6,14 +6,16 @@ from typing import Any, ClassVar
 
 import pytest
 
-from syncworker.adapters import soundcloud_adapter as soundcloud_adapter_module
-from syncworker.adapters.models.soundcloud_models import (
+from syncworker.soundcloud.data.client.soundcloud_client import SoundCloudClient
+from syncworker.soundcloud.data.client import soundcloud_client as soundcloud_client_module
+from syncworker.soundcloud.data.models.soundcloud_models import SoundCloudEntry
+from syncworker.soundcloud.data.repository.soundcloud_data_repository import SoundCloudDataRepository
+from syncworker.soundcloud.domain.models.soundcloud_models import (
     SoundCloudDownloadResult,
     SoundCloudLibrary,
     SoundCloudPlaylist,
     SoundCloudTrack,
 )
-from syncworker.adapters.soundcloud_adapter import SoundCloudAdapter
 
 
 class FakeYoutubeDL:
@@ -58,16 +60,16 @@ def use_fake_youtube_dl(monkeypatch: pytest.MonkeyPatch) -> None:
     FakeYoutubeDL.instances = []
     FakeYoutubeDL.extract_results = []
     FakeYoutubeDL.download_exit_code = 0
-    monkeypatch.setattr(soundcloud_adapter_module, "YoutubeDL", FakeYoutubeDL)
+    monkeypatch.setattr(soundcloud_client_module, "YoutubeDL", FakeYoutubeDL)
 
 
 def test_download_tracks_creates_directories_and_calls_youtube_dl_with_expected_options(tmp_path: Path) -> None:
     FakeYoutubeDL.download_exit_code = 17
-    adapter = SoundCloudAdapter("https://soundcloud.com/user/likes")
+    repository = SoundCloudDataRepository("https://soundcloud.com/user/likes", SoundCloudClient())
     music_dir = tmp_path / "music"
     archive_file = music_dir / "archive.txt"
 
-    result = adapter.download_tracks(music_dir=music_dir, archive_file=archive_file)
+    result = repository.download_tracks(music_dir=music_dir, archive_file=archive_file)
 
     assert result == SoundCloudDownloadResult(exit_code=17)
     assert music_dir.exists()
@@ -126,9 +128,9 @@ def test_get_library_maps_liked_tracks_and_playlists() -> None:
             ]
         },
     ]
-    adapter = SoundCloudAdapter("https://soundcloud.com/user/likes")
+    repository = SoundCloudDataRepository("https://soundcloud.com/user/likes", SoundCloudClient())
 
-    library = adapter.get_library()
+    library = repository.get_library()
 
     assert library == SoundCloudLibrary(
         liked_tracks=(
@@ -173,10 +175,10 @@ def test_get_library_raises_when_root_entry_has_missing_required_field() -> None
             ]
         }
     ]
-    adapter = SoundCloudAdapter("https://soundcloud.com/user/likes")
+    repository = SoundCloudDataRepository("https://soundcloud.com/user/likes", SoundCloudClient())
 
     with pytest.raises(RuntimeError, match="SoundCloud entry has no title"):
-        adapter.get_library()
+        repository.get_library()
 
 
 def test_get_playlist_tracks_returns_only_entries_with_required_fields() -> None:
@@ -204,9 +206,9 @@ def test_get_playlist_tracks_returns_only_entries_with_required_fields() -> None
             ]
         }
     ]
-    adapter = SoundCloudAdapter("https://soundcloud.com/user/likes")
+    repository = SoundCloudDataRepository("https://soundcloud.com/user/likes", SoundCloudClient())
 
-    assert adapter._get_playlist_tracks("https://soundcloud.com/user/sets/playlist") == (
+    assert repository._get_playlist_tracks("https://soundcloud.com/user/sets/playlist") == (
         SoundCloudTrack(
             id="track-1",
             url="https://soundcloud.com/user/track-1",
@@ -218,9 +220,9 @@ def test_get_playlist_tracks_returns_only_entries_with_required_fields() -> None
 def test_extract_flat_returns_youtube_dl_dict_response() -> None:
     FakeYoutubeDL.extract_results = [{"entries": []}]
 
-    result = SoundCloudAdapter._extract_flat("https://soundcloud.com/user/likes")
+    result = SoundCloudClient().extract_flat("https://soundcloud.com/user/likes")
 
-    assert result == {"entries": []}
+    assert result.entries == ()
     assert len(FakeYoutubeDL.instances) == 1
     youtube_dl = FakeYoutubeDL.instances[0]
     assert youtube_dl.options == {"extract_flat": True, "quiet": True, "no_warnings": True}
@@ -233,11 +235,11 @@ def test_extract_flat_raises_when_youtube_dl_result_is_not_dict() -> None:
     FakeYoutubeDL.extract_results = ["invalid-response"]
 
     with pytest.raises(RuntimeError, match="Invalid SoundCloud response for url"):
-        SoundCloudAdapter._extract_flat("https://soundcloud.com/user/likes")
+        SoundCloudClient().extract_flat("https://soundcloud.com/user/likes")
 
 
 def test_entries_returns_only_dict_entries() -> None:
-    assert SoundCloudAdapter._entries(
+    assert SoundCloudClient._entries(
         {
             "entries": [
                 {"id": "track-1"},
@@ -245,7 +247,10 @@ def test_entries_returns_only_dict_entries() -> None:
                 {"id": "track-2"},
             ]
         }
-    ) == ({"id": "track-1"}, {"id": "track-2"})
+    ) == (
+        SoundCloudEntry(id="track-1", url=None, title=None),
+        SoundCloudEntry(id="track-2", url=None, title=None),
+    )
 
 
 @pytest.mark.parametrize(
@@ -257,7 +262,7 @@ def test_entries_returns_only_dict_entries() -> None:
     ),
 )
 def test_entries_returns_empty_tuple_when_entries_are_missing_or_invalid(result: dict[str, Any]) -> None:
-    assert SoundCloudAdapter._entries(result) == ()
+    assert SoundCloudClient._entries(result) == ()
 
 
 @pytest.mark.parametrize(
@@ -268,13 +273,13 @@ def test_entries_returns_empty_tuple_when_entries_are_missing_or_invalid(result:
     ),
 )
 def test_is_playlist(url: str, expected_result: bool) -> None:
-    assert SoundCloudAdapter._is_playlist(url) is expected_result
+    assert SoundCloudDataRepository._is_playlist(url) is expected_result
 
 
 def test_required_str_returns_string_value() -> None:
-    assert SoundCloudAdapter._required_str({"id": 123}, "id") == "123"
+    assert SoundCloudDataRepository._required_str(SoundCloudEntry(id="123", url=None, title=None), "id") == "123"
 
 
 def test_required_str_raises_when_field_is_missing() -> None:
     with pytest.raises(RuntimeError, match="SoundCloud entry has no id"):
-        SoundCloudAdapter._required_str({"title": "Track"}, "id")
+        SoundCloudDataRepository._required_str(SoundCloudEntry(id=None, url=None, title="Track"), "id")

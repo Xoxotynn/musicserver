@@ -1,24 +1,24 @@
 from __future__ import annotations
 
-from syncworker.adapters.models.navidrome_models import NavidromeSong
-from syncworker.adapters.models.soundcloud_models import SoundCloudLibrary, SoundCloudPlaylist, SoundCloudTrack
-from syncworker.adapters.navidrome_adapter import NavidromeAdapter
-from syncworker.adapters.soundcloud_adapter import SoundCloudAdapter
-from syncworker.models.library_models import LibraryPlaylist, LibraryTrack, MusicLibrary
+from syncworker.navidrome.domain.models.navidrome_models import NavidromeSong
+from syncworker.navidrome.domain.repository.navidrome_repository import NavidromeRepository
+from syncworker.soundcloud.domain.models.soundcloud_models import SoundCloudLibrary, SoundCloudPlaylist, SoundCloudTrack
+from syncworker.soundcloud.domain.repository.soundcloud_repository import SoundCloudRepository
+from syncworker.sync.domain.models.library_models import LibraryPlaylist, LibraryTrack, MusicLibrary
 
 
-class LibraryRepository:
+class BuildMusicLibraryUseCase:
     def __init__(
         self,
-        soundcloud_adapter: SoundCloudAdapter,
-        navidrome_adapter: NavidromeAdapter,
+        soundcloud_repository: SoundCloudRepository,
+        navidrome_repository: NavidromeRepository,
     ):
-        self.soundcloud_adapter = soundcloud_adapter
-        self.navidrome_adapter = navidrome_adapter
+        self.soundcloud_repository = soundcloud_repository
+        self.navidrome_repository = navidrome_repository
 
-    def get_library(self) -> MusicLibrary:
-        soundcloud_library = self.soundcloud_adapter.get_library()
-        navidrome_songs = self.navidrome_adapter.find_songs_by_soundcloud_ids(
+    def execute(self) -> MusicLibrary:
+        soundcloud_library = self.soundcloud_repository.get_library()
+        navidrome_songs = self.navidrome_repository.find_songs_by_soundcloud_ids(
             tuple(track.id for track in soundcloud_library.all_tracks)
         )
 
@@ -35,12 +35,12 @@ class LibraryRepository:
         navidrome_songs_by_soundcloud_id = {song.soundcloud_id: song for song in navidrome_songs}
 
         return MusicLibrary(
-            liked_tracks=LibraryRepository._map_liked_tracks(
+            liked_tracks=BuildMusicLibraryUseCase._map_liked_tracks(
                 soundcloud_library.liked_tracks,
                 navidrome_songs_by_soundcloud_id,
             ),
             playlists=tuple(
-                LibraryRepository._map_playlist(playlist, navidrome_songs_by_soundcloud_id)
+                BuildMusicLibraryUseCase._map_playlist(playlist, navidrome_songs_by_soundcloud_id)
                 for playlist in soundcloud_library.playlists
             ),
         )

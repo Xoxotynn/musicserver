@@ -7,8 +7,9 @@ from typing import Any, cast
 import pytest
 import requests
 
-from syncworker.adapters.models.navidrome_models import NavidromeSong, ScanStatus, StarredItems
-from syncworker.adapters.navidrome_adapter import NavidromeAdapter
+from syncworker.navidrome.data.client.navidrome_client import NavidromeClient
+from syncworker.navidrome.data.repository.navidrome_data_repository import NavidromeDataRepository
+from syncworker.navidrome.domain.models.navidrome_models import NavidromeSong, ScanStatus, StarredItems
 
 
 @dataclass(frozen=True)
@@ -48,15 +49,15 @@ class FakeSession:
         return self.responses.pop(0)
 
 
-def create_adapter(*payloads: dict[str, Any]) -> tuple[NavidromeAdapter, FakeSession]:
+def create_repository(*payloads: dict[str, Any]) -> tuple[NavidromeDataRepository, FakeSession]:
     session = FakeSession(payloads)
-    adapter = NavidromeAdapter(
+    client = NavidromeClient(
         base_url="http://navidrome:4533/rest/",
         user="user",
         password="password",
         session=cast(requests.Session, cast(object, session)),
     )
-    return adapter, session
+    return NavidromeDataRepository(client), session
 
 
 def navidrome_payload(**response_fields: Any) -> dict[str, Any]:
@@ -92,9 +93,9 @@ def assert_auth_params(call: RequestCall) -> None:
 
 
 def test_start_scan_sends_start_scan_request() -> None:
-    adapter, session = create_adapter(navidrome_payload())
+    repository, session = create_repository(navidrome_payload())
 
-    adapter.start_scan()
+    repository.start_scan()
 
     call = assert_single_call(session)
     assert call.url == "http://navidrome:4533/rest/startScan.view"
@@ -102,19 +103,19 @@ def test_start_scan_sends_start_scan_request() -> None:
 
 
 def test_get_scan_status_maps_scan_status_response() -> None:
-    adapter, _ = create_adapter(navidrome_payload(scanStatus={"scanning": True, "count": "7"}))
+    repository, _ = create_repository(navidrome_payload(scanStatus={"scanning": True, "count": "7"}))
 
-    assert adapter.get_scan_status() == ScanStatus(scanning=True, count=7)
+    assert repository.get_scan_status() == ScanStatus(scanning=True, count=7)
 
 
 def test_get_scan_status_returns_none_count_when_count_is_missing_or_invalid() -> None:
-    adapter, _ = create_adapter(navidrome_payload(scanStatus={"scanning": False, "count": "invalid"}))
+    repository, _ = create_repository(navidrome_payload(scanStatus={"scanning": False, "count": "invalid"}))
 
-    assert adapter.get_scan_status() == ScanStatus(scanning=False, count=None)
+    assert repository.get_scan_status() == ScanStatus(scanning=False, count=None)
 
 
 def test_get_starred_maps_song_album_and_artist_ids() -> None:
-    adapter, _ = create_adapter(
+    repository, _ = create_repository(
         navidrome_payload(
             starred={
                 "song": [{"id": "song-1"}, {"id": 2}, {"missing_id": "ignored"}],
@@ -124,7 +125,7 @@ def test_get_starred_maps_song_album_and_artist_ids() -> None:
         )
     )
 
-    assert adapter.get_starred() == StarredItems(
+    assert repository.get_starred() == StarredItems(
         song_ids=("song-1", "2"),
         album_ids=("album-1",),
         artist_ids=("artist-1",),
@@ -132,7 +133,7 @@ def test_get_starred_maps_song_album_and_artist_ids() -> None:
 
 
 def test_find_song_by_soundcloud_id_returns_exact_matching_song() -> None:
-    adapter, session = create_adapter(
+    repository, session = create_repository(
         navidrome_payload(
             searchResult3={
                 "song": [
@@ -163,7 +164,7 @@ def test_find_song_by_soundcloud_id_returns_exact_matching_song() -> None:
         )
     )
 
-    song = adapter.find_song_by_soundcloud_id("111")
+    song = repository.find_song_by_soundcloud_id("111")
 
     assert song == NavidromeSong(
         id="nd-1",
@@ -180,7 +181,7 @@ def test_find_song_by_soundcloud_id_returns_exact_matching_song() -> None:
 
 
 def test_find_song_by_soundcloud_id_returns_none_when_exact_song_is_not_found() -> None:
-    adapter, _ = create_adapter(
+    repository, _ = create_repository(
         navidrome_payload(
             searchResult3={
                 "song": {
@@ -192,11 +193,11 @@ def test_find_song_by_soundcloud_id_returns_none_when_exact_song_is_not_found() 
         )
     )
 
-    assert adapter.find_song_by_soundcloud_id("111") is None
+    assert repository.find_song_by_soundcloud_id("111") is None
 
 
 def test_find_songs_by_soundcloud_ids_returns_only_found_songs() -> None:
-    adapter, _ = create_adapter(
+    repository, _ = create_repository(
         navidrome_payload(
             searchResult3={
                 "song": {
@@ -209,7 +210,7 @@ def test_find_songs_by_soundcloud_ids_returns_only_found_songs() -> None:
         navidrome_payload(searchResult3={"song": []}),
     )
 
-    assert adapter.find_songs_by_soundcloud_ids(("111", "222")) == (
+    assert repository.find_songs_by_soundcloud_ids(("111", "222")) == (
         NavidromeSong(
             id="nd-1",
             title="First",
@@ -222,9 +223,9 @@ def test_find_songs_by_soundcloud_ids_returns_only_found_songs() -> None:
 
 
 def test_star_sends_star_request_with_item_id() -> None:
-    adapter, session = create_adapter(navidrome_payload())
+    repository, session = create_repository(navidrome_payload())
 
-    adapter.star("song-1")
+    repository.star("song-1")
 
     call = assert_single_call(session)
     assert call.url == "http://navidrome:4533/rest/star.view"
@@ -233,9 +234,9 @@ def test_star_sends_star_request_with_item_id() -> None:
 
 
 def test_unstar_sends_unstar_request_with_repeated_item_ids() -> None:
-    adapter, session = create_adapter(navidrome_payload())
+    repository, session = create_repository(navidrome_payload())
 
-    adapter.unstar(("song-1", "song-2"))
+    repository.unstar(("song-1", "song-2"))
 
     call = assert_single_call(session)
     assert call.url == "http://navidrome:4533/rest/unstar.view"
@@ -244,33 +245,33 @@ def test_unstar_sends_unstar_request_with_repeated_item_ids() -> None:
 
 
 def test_unstar_does_not_send_request_when_item_ids_are_empty() -> None:
-    adapter, session = create_adapter()
+    repository, session = create_repository()
 
-    adapter.unstar(())
+    repository.unstar(())
 
     assert session.calls == []
 
 
 def test_get_raises_runtime_error_when_subsonic_response_is_missing() -> None:
-    adapter, _ = create_adapter({"unexpected": "payload"})
+    repository, _ = create_repository({"unexpected": "payload"})
 
     with pytest.raises(RuntimeError, match="missing subsonic-response"):
-        adapter.start_scan()
+        repository.start_scan()
 
 
 def test_get_raises_runtime_error_when_subsonic_response_has_failed_status() -> None:
-    adapter, _ = create_adapter(failed_navidrome_payload("bad credentials"))
+    repository, _ = create_repository(failed_navidrome_payload("bad credentials"))
 
     with pytest.raises(RuntimeError, match="Navidrome API error: bad credentials"):
-        adapter.start_scan()
+        repository.start_scan()
 
 
 def test_map_song_returns_none_when_path_is_missing() -> None:
-    assert NavidromeAdapter._map_song({"id": "nd-1", "title": "Track"}) is None
+    assert NavidromeDataRepository._map_song({"id": "nd-1", "title": "Track"}) is None
 
 
 def test_map_song_returns_none_when_path_has_no_soundcloud_id() -> None:
-    assert NavidromeAdapter._map_song({"id": "nd-1", "path": "SoundCloud/track.mp3"}) is None
+    assert NavidromeDataRepository._map_song({"id": "nd-1", "path": "SoundCloud/track.mp3"}) is None
 
 
 @pytest.mark.parametrize(
@@ -283,4 +284,4 @@ def test_map_song_returns_none_when_path_has_no_soundcloud_id() -> None:
     ),
 )
 def test_extract_soundcloud_id(path: str, expected_soundcloud_id: str | None) -> None:
-    assert NavidromeAdapter._extract_soundcloud_id(path) == expected_soundcloud_id
+    assert NavidromeDataRepository._extract_soundcloud_id(path) == expected_soundcloud_id

@@ -4,18 +4,20 @@ from pathlib import Path
 
 import pytest
 
-from syncworker.adapters.filesystem_adapter import FilesystemAdapter
-from syncworker.adapters.models.filesystem_models import LocalTrack
+from syncworker.filesystem.data.client.filesystem_client import FilesystemClient
+from syncworker.filesystem.data.repository.filesystem_data_repository import FilesystemDataRepository
+from syncworker.filesystem.domain.models.filesystem_models import LocalTrack
 
 pytestmark = pytest.mark.integration
 
 
-def create_adapter(tmp_path: Path) -> FilesystemAdapter:
+def create_adapter(tmp_path: Path) -> FilesystemDataRepository:
     music_dir = tmp_path / "music"
-    return FilesystemAdapter(
+    return FilesystemDataRepository(
         music_dir=music_dir,
         playlists_dir=music_dir / "playlists",
         archive_file=music_dir / "archive.txt",
+        client=FilesystemClient(),
     )
 
 
