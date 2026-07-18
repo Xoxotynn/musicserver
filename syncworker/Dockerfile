@@ -1,5 +1,7 @@
 FROM alpine:3.23
 
+RUN apk update && apk upgrade
+
 RUN apk add --no-cache \
     bash \
     curl \
@@ -9,8 +11,12 @@ RUN apk add --no-cache \
     py3-pip \
     py3-mutagen \
     ffmpeg \
-    tzdata \
-    yt-dlp
+    tzdata
+
+RUN curl -fsSL https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp \
+    -o /usr/local/bin/yt-dlp \
+ && chmod +x /usr/local/bin/yt-dlp \
+ && yt-dlp -U
 
 ENV SUPERCRONIC_URL=https://github.com/aptible/supercronic/releases/download/v0.2.44/supercronic-linux-amd64 \
     SUPERCRONIC_SHA1SUM=6eb0a8e1e6673675dc67668c1a9b6409f79c37bc \
